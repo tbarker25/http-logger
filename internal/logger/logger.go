@@ -37,12 +37,13 @@ type commonLogEntry struct {
 	Size     int
 }
 
+// Config is the configuration point of this package
 type Config struct {
-	Input                io.ReadCloser
+	Input                io.Reader
 	Output               io.Writer
 	UpdateInterval       time.Duration
-	HighTrafficThreshold int
 	HighTrafficInterval  time.Duration
+	HighTrafficThreshold int
 }
 
 type logger struct {
@@ -53,6 +54,8 @@ type logger struct {
 	isHighTrafficTriggered bool
 }
 
+// Run the logging daemon. This function will only return when config.Input is
+// closed
 func Run(config Config) {
 	logger := logger{
 		Config:      config,
@@ -163,7 +166,7 @@ func (logger *logger) watch(end chan struct{}) {
 func parseLineEntry(line []byte) (*commonLogEntry, error) {
 	matches := commonLogFormatRegexp.FindStringSubmatch(string(line))
 	if len(matches) < 8 {
-		return nil, fmt.Errorf("could not parse line '%s'\n", line)
+		return nil, fmt.Errorf("could not parse line '%s'", line)
 	}
 
 	time, err := time.Parse(commonLogDateFormat, matches[3])

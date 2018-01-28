@@ -18,15 +18,14 @@ func writeTestLine(w io.Writer, section string) {
 }
 
 func TestReportingSections(t *testing.T) {
+	t.Parallel()
 	readIn, writeIn := io.Pipe()
 	var out bytes.Buffer
 
 	var config = Config{
-		Input:                readIn,
-		Output:               &out,
-		UpdateInterval:       1 * time.Second,
-		HighTrafficThreshold: 10,
-		HighTrafficInterval:  10 * time.Second,
+		Input:          readIn,
+		Output:         &out,
+		UpdateInterval: 1 * time.Second,
 	}
 
 	go Run(config)
@@ -64,18 +63,18 @@ func TestReportingSections(t *testing.T) {
 }
 
 func TestPrintingAlert(t *testing.T) {
+	t.Parallel()
 	readIn, writeIn := io.Pipe()
 	var out bytes.Buffer
 
 	var config = Config{
 		Input:                readIn,
 		Output:               &out,
-		UpdateInterval:       time.Hour,
 		HighTrafficThreshold: 10,
 		HighTrafficInterval:  1 * time.Second,
 	}
 
-	Run(config)
+	go Run(config)
 	defer writeIn.Close()
 
 	time.Sleep(100 * time.Millisecond)
