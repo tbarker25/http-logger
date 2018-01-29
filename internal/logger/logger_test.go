@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"sync"
 	"testing"
 	"time"
 )
@@ -20,7 +21,7 @@ func writeTestLine(w io.Writer, section string) {
 func TestReportingSections(t *testing.T) {
 	t.Parallel()
 	readIn, writeIn := io.Pipe()
-	var out bytes.Buffer
+	var out syncBuffer
 
 	var config = Config{
 		Input:          readIn,
@@ -65,7 +66,7 @@ func TestReportingSections(t *testing.T) {
 func TestPrintingAlert(t *testing.T) {
 	t.Parallel()
 	readIn, writeIn := io.Pipe()
-	var out bytes.Buffer
+	var out syncBuffer
 
 	var config = Config{
 		Input:                readIn,
@@ -107,7 +108,7 @@ func TestPrintingAlert(t *testing.T) {
 	}
 	time.Sleep(config.HighTrafficInterval)
 	want := regexp.MustCompile(`^WARNING: high traffic of \d+.\d+ hits per second, triggered at \S+\n$`)
-	if !want.Match(out.Bytes()) {
+	if !want.MatchString(out.String()) {
 		t.Fatalf("want: `%s`\ngot: `%s`\n", want, out.String())
 	}
 	out.Reset()
@@ -127,7 +128,37 @@ func TestPrintingAlert(t *testing.T) {
 	// traffic condition is resolved
 	time.Sleep(config.HighTrafficInterval + time.Millisecond)
 	want = regexp.MustCompile(`^WARNING: high traffic condition resolved at \S+\n$`)
-	if !want.Match(out.Bytes()) {
+	if !want.MatchString(out.String()) {
 		t.Fatalf("want: `%s`\ngot: `%s`\n", want, out.String())
 	}
+}
+
+// Just a simple sync-safe bytes.Buffer
+type syncBuffer struct {
+	b bytes.Buffer
+	m sync.Mutex
+}
+
+func (b *syncBuffer) Read(p []byte) (n int, err error) {
+	b.m.Lock()
+	defer b.m.Unlock()
+	return b.b.Read(p)
+}
+
+func (b *syncBuffer) Write(p []byte) (n int, err error) {
+	b.m.Lock()
+	defer b.m.Unlock()
+	return b.b.Write(p)
+}
+
+func (b *syncBuffer) String() string {
+	b.m.Lock()
+	defer b.m.Unlock()
+	return b.b.String()
+}
+
+func (b *syncBuffer) Reset() {
+	b.m.Lock()
+	defer b.m.Unlock()
+	b.b.Reset()
 }

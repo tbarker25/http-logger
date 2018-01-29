@@ -61,8 +61,8 @@ func Run(config Config) {
 			)
 		}
 
-		logger.totalTraffic++
 		logger.sectionHitsLock.Lock()
+		logger.totalTraffic++
 		logger.sectionHits[entry.Section]++
 		logger.sectionHitsLock.Unlock()
 	}
@@ -167,6 +167,9 @@ func (logger *logger) printUpdate() {
 // HighTrafficThreshold. If we have, then print a warning.
 // We also print a warning when this high traffic state is resolved.
 func (logger *logger) checkHighTraffic() {
+	logger.sectionHitsLock.Lock()
+	defer logger.sectionHitsLock.Unlock()
+
 	if logger.totalTraffic > logger.HighTrafficThreshold &&
 		!logger.isHighTrafficTriggered {
 
