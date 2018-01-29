@@ -2,6 +2,8 @@
 toy logging daemon
 
 # checking out
+	mkdir ${GOPATH:-${HOME}/go}/src/github.com/tbarker25/
+	cd ${GOPATH:-${HOME}/go}/src/github.com/tbarker25/
 	git clone git@github.com:tbarker25/http-logger.git
 
 # usage example
