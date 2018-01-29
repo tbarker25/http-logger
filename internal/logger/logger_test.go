@@ -1,13 +1,13 @@
 package logger
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"regexp"
-	"sync"
 	"testing"
 	"time"
+
+	"github.com/tbarker25/http-logger/internal/syncbytes"
 )
 
 func writeTestLine(w io.Writer, section string) {
@@ -21,7 +21,7 @@ func writeTestLine(w io.Writer, section string) {
 func TestReportingSections(t *testing.T) {
 	t.Parallel()
 	readIn, writeIn := io.Pipe()
-	var out syncBuffer
+	var out syncbytes.Buffer
 
 	var config = Config{
 		Input:          readIn,
@@ -66,7 +66,7 @@ func TestReportingSections(t *testing.T) {
 func TestPrintingAlert(t *testing.T) {
 	t.Parallel()
 	readIn, writeIn := io.Pipe()
-	var out syncBuffer
+	var out syncbytes.Buffer
 
 	var config = Config{
 		Input:                readIn,
@@ -131,34 +131,4 @@ func TestPrintingAlert(t *testing.T) {
 	if !want.MatchString(out.String()) {
 		t.Fatalf("want: `%s`\ngot: `%s`\n", want, out.String())
 	}
-}
-
-// Just a simple sync-safe bytes.Buffer
-type syncBuffer struct {
-	b bytes.Buffer
-	m sync.Mutex
-}
-
-func (b *syncBuffer) Read(p []byte) (n int, err error) {
-	b.m.Lock()
-	defer b.m.Unlock()
-	return b.b.Read(p)
-}
-
-func (b *syncBuffer) Write(p []byte) (n int, err error) {
-	b.m.Lock()
-	defer b.m.Unlock()
-	return b.b.Write(p)
-}
-
-func (b *syncBuffer) String() string {
-	b.m.Lock()
-	defer b.m.Unlock()
-	return b.b.String()
-}
-
-func (b *syncBuffer) Reset() {
-	b.m.Lock()
-	defer b.m.Unlock()
-	b.b.Reset()
 }
