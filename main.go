@@ -46,5 +46,11 @@ func main() {
 		loggerConfig.Output = file
 	}
 
-	logger.Run(loggerConfig)
+	err := logger.Run(loggerConfig)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+
+	os.Exit(0)
 }

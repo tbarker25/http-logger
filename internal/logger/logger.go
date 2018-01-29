@@ -36,7 +36,7 @@ type Config struct {
 
 // Run the logging daemon. This function will return when config.Input is
 // closed. Make sure to set all the fields in Config appropriately.
-func Run(config Config) {
+func Run(config Config) error {
 	logger := logger{
 		Config:      config,
 		sectionHits: map[string]int{},
@@ -49,8 +49,11 @@ func Run(config Config) {
 	for {
 		line, err := reader.ReadBytes('\n')
 		if err == io.EOF {
-			return
+			return nil
+		} else if err != nil {
+			return err
 		}
+
 		line = bytes.TrimSpace(line)
 
 		entry, err := parseLineEntry(string(line))
@@ -59,6 +62,7 @@ func Run(config Config) {
 				"WARNING: %s\n",
 				err,
 			)
+			continue
 		}
 
 		logger.sectionHitsLock.Lock()
@@ -146,21 +150,21 @@ func (logger *logger) printUpdate() {
 		}
 	}
 
-	hitsPerSecond := float64(maxHits) *
-		float64(time.Second) / float64(logger.UpdateInterval)
-
 	if maxHits == 0 {
 		fmt.Fprintln(logger.Output,
 			"no hits to server",
 		)
-	} else {
-		sort.Strings(activeSections)
-		fmt.Fprintf(logger.Output,
-			"busiest sections: %s (%0.2f hits per second)\n",
-			strings.Join(activeSections, ", "),
-			hitsPerSecond,
-		)
+		return
 	}
+
+	hitsPerSecond := float64(maxHits) *
+		float64(time.Second) / float64(logger.UpdateInterval)
+	sort.Strings(activeSections)
+	fmt.Fprintf(logger.Output,
+		"busiest sections: %s (%0.2f hits per second)\n",
+		strings.Join(activeSections, ", "),
+		hitsPerSecond,
+	)
 }
 
 // checkHighTraffic checks if we've recieved more hits than
