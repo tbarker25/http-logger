@@ -80,7 +80,7 @@ func TestPrintingAlert(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// We shouldn't write anything when below threshold
-	for i := 0; i < config.HighTrafficThreshold-1; i++ {
+	for i := 0; i < config.HighTrafficThreshold; i++ {
 		writeTestLine(writeIn, "section-a")
 	}
 	time.Sleep(config.HighTrafficInterval + time.Millisecond)
@@ -92,7 +92,7 @@ func TestPrintingAlert(t *testing.T) {
 	// We shouldn't write anything when below threshold
 	// trying this twice to ensure that the counter is reset after waiting for
 	// HighTrafficInterval to elapse
-	for i := 0; i < config.HighTrafficThreshold-1; i++ {
+	for i := 0; i < config.HighTrafficThreshold; i++ {
 		writeTestLine(writeIn, "section-a")
 	}
 	time.Sleep(config.HighTrafficInterval)
